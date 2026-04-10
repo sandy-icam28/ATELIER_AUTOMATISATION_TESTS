@@ -1,15 +1,60 @@
-import requests
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Cat API Dashboard</title>
+  <style>
+    body { font-family: Arial; text-align: center; }
+    img { max-width: 400px; margin-top: 20px; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
 
-BASE_URL = "https://cataas.com"
+<h1>🐱 Cat API Tester</h1>
 
+<button onclick="getCat()">Charger un chat</button>
 
-def get_random_cat():
-    return requests.get(f"{BASE_URL}/cat")
+<p id="status"></p>
+<img id="catImg" src="" alt="cat" />
 
+<script>
+async function getCat() {
+  const status = document.getElementById("status");
+  const img = document.getElementById("catImg");
 
-def get_cat_json():
-    return requests.get(f"{BASE_URL}/cat?json=true")
+  status.textContent = "Chargement...";
+  
+  try {
+    const start = performance.now();
 
+    const response = await fetch("https://cataas.com/cat?json=true");
 
-def get_cat_list(limit=3):
-    return requests.get(f"{BASE_URL}/api/cats?limit={limit}")
+    // TEST 1 : statut HTTP
+    if (!response.ok) {
+      throw new Error("Erreur HTTP: " + response.status);
+    }
+
+    const data = await response.json();
+
+    // TEST 2 : validation JSON
+    if (!data.url) {
+      throw new Error("Champ 'url' manquant");
+    }
+
+    const end = performance.now();
+    const latency = Math.round(end - start);
+
+    img.src = "https://cataas.com" + data.url;
+
+    status.textContent = `✅ OK - Latence: ${latency} ms`;
+
+  } catch (error) {
+    status.textContent = "❌ " + error.message;
+    status.className = "error";
+  }
+}
+</script>
+
+</body>
+</html>
