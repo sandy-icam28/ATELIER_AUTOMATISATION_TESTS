@@ -45,7 +45,7 @@ async function getCat() {
     const end = performance.now();
     const latency = Math.round(end - start);
 
-    img.src = "https://cataas.com" + data.url;
+    img.src = data.url;
 
     status.textContent = `✅ OK - Latence: ${latency} ms`;
 
