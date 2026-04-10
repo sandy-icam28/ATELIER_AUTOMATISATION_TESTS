@@ -1,7 +1,0 @@
-endpoints : avec url https://cataas.com/
-  /cat
-  /cat/:tag
-  /cat/gif
-  /cat/says/:text
-  /cat/:tag/says/:text
-  /cat/says/:text?fontSize=:size&fontColor=:color
