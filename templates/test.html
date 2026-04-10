@@ -1,0 +1,15 @@
+import requests
+
+BASE_URL = "https://cataas.com"
+
+
+def get_random_cat():
+    return requests.get(f"{BASE_URL}/cat")
+
+
+def get_cat_json():
+    return requests.get(f"{BASE_URL}/cat?json=true")
+
+
+def get_cat_list(limit=3):
+    return requests.get(f"{BASE_URL}/api/cats?limit={limit}")
