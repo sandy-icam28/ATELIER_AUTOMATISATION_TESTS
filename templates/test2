@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Cat API Monitoring</title>
+
+<style>
+body {
+  font-family: Arial;
+  text-align: center;
+  background: #f5f5f5;
+}
+
+button {
+  padding: 10px 20px;
+  margin: 10px;
+  cursor: pointer;
+}
+
+img {
+  max-width: 300px;
+  margin-top: 20px;
+}
+
+.card {
+  background: white;
+  padding: 15px;
+  margin: 15px auto;
+  width: 300px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.error { color: red; }
+.success { color: green; }
+</style>
+
+</head>
+<body>
+
+<h1>🐱 Cat API Dashboard</h1>
+
+<button onclick="runTest()">Lancer un test</button>
+<button onclick="autoRun()">Auto (5s)</button>
+
+<div class="card">
+  <h3>Résultat</h3>
+  <p id="status"></p>
+  <img id="catImg"/>
+</div>
+
+<div class="card">
+  <h3>QoS</h3>
+  <p id="stats"></p>
+</div>
+
+<script>
+// =======================
+// ASSERTIONS (tests as code)
+// =======================
+function assert(condition, message) {
+  if (!condition) {
+    throw new Error(message);
+  }
+}
+
+// =======================
+// STATS
+// =======================
+let stats = JSON.parse(localStorage.getItem("stats")) || {
+  total: 0,
+  errors: 0,
+  times: []
+};
+
+// =======================
+// UTILS
+// =======================
+function avg(arr) {
+  return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
+}
+
+// p95 simple
+function p95(arr) {
+  if (!arr.length) return 0;
+  let sorted = [...arr].sort((a,b)=>a-b);
+  return sorted[Math.floor(0.95 * sorted.length)];
+}
+
+// =======================
+// FETCH ROBUSTE
+// =======================
+async function fetchWithRetry(url, retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeout);
+
+      // TEST HTTP
+      assert(response.status === 200, "Status != 200");
+
+      const data = await response.json();
+
+      // TEST JSON
+      assert(typeof data.url === "string", "url invalide");
+
+      return data;
+
+    } catch (err) {
+      if (i === retries - 1) throw err;
+    }
+  }
+}
+
+// =======================
+// RUN TEST
+// =======================
+async function runTest() {
+  const status = document.getElementById("status");
+  const img = document.getElementById("catImg");
+
+  stats.total++;
+
+  try {
+    const start = performance.now();
+
+    const data = await fetchWithRetry("https://cataas.com/cat?json=true");
+
+    const latency = performance.now() - start;
+    stats.times.push(latency);
+
+    img.src = "https://cataas.com" + data.url;
+
+    status.textContent = "✅ OK (" + Math.round(latency) + " ms)";
+    status.className = "success";
+
+  } catch (e) {
+    stats.errors++;
+
+    status.textContent = "❌ " + e.message;
+    status.className = "error";
+  }
+
+  saveStats();
+  updateDashboard();
+}
+
+// =======================
+// DASHBOARD
+// =======================
+function updateDashboard() {
+  document.getElementById("stats").textContent =
+    `Runs: ${stats.total}
+Erreurs: ${stats.errors}
+Latence moy: ${avg(stats.times).toFixed(1)} ms
+P95: ${p95(stats.times).toFixed(1)} ms`;
+}
+
+// =======================
+// STORAGE
+// =======================
+function saveStats() {
+  localStorage.setItem("stats", JSON.stringify(stats));
+}
+
+// =======================
+// AUTO RUN
+// =======================
+let interval = null;
+
+function autoRun() {
+  if (interval) {
+    clearInterval(interval);
+    interval = null;
+    alert("Auto arrêté");
+  } else {
+    interval = setInterval(runTest, 5000);
+    alert("Auto lancé (toutes les 5s)");
+  }
+}
+
+// init
+updateDashboard();
+
+</script>
+
+</body>
+</html>
