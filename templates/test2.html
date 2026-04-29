@@ -132,7 +132,7 @@ async function runTest() {
     const latency = performance.now() - start;
     stats.times.push(latency);
 
-    img.src = "https://cataas.com" + data.url;
+    img.src = data.url;
 
     status.textContent = "✅ OK (" + Math.round(latency) + " ms)";
     status.className = "success";
