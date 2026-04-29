@@ -15,6 +15,10 @@ def consignes():
 def test():
      return render_template('test.html')
 
+@app.get("/test2")
+def test2():
+     return render_template('test2.html')
+
 if __name__ == "__main__":
     # utile en local uniquement
     app.run(host="0.0.0.0", port=5000, debug=True)
